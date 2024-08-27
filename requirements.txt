@@ -2,3 +2,5 @@ pandas-ta >= 0.3.14b
 pandas >= 2.2.1
 numpy >=1.26, <2.0
 yfinance >=0.2.40
+setuptools>0.72
+tabulate>0.8.9

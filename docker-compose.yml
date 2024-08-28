@@ -4,7 +4,7 @@
       build:
         context: .
       container_name: b3b
-      volumes: 
+      volumes:
         - "./:/app"
         - "./b3b:/app/b3b"
       ports:
@@ -12,4 +12,3 @@
       command: >
         sh -c "python main.py B3SA3.SA 1d 2024-01-01-2024-08-01"
         # Set a default command using B3SA3 as example running with standard strategy
-

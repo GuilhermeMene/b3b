@@ -12,9 +12,8 @@ RUN python -m venv /py && \
     rm -rf /tmp && \
     adduser \
         --disabled-password \
-        b3b-user 
-        
+        b3b-user
+
 ENV PATH="/py/bin:$PATH"
-ENV TRADEDIR="/b3b/results"
 
 USER b3b-user

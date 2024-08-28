@@ -1,8 +1,8 @@
 """
-Logging all errors and results from backtesting 
+Logging all errors and results from backtesting
 """
 
-import os 
+import os
 
 def set_path(path):
     """
@@ -15,7 +15,7 @@ def set_path(path):
 
 def log(logtext:str):
     """
-    Method for save the log in text file 
+    Method for save the log in text file
     """
     try:
         filedir = os.environ.get('LOGPATH')
@@ -29,22 +29,21 @@ def log(logtext:str):
         print('An error occurred.The log path is inaccessible \
               or the the log path not in os environment.')
 
-def save_trade(order, ticker:str ,pricetype='High'):
+def save_trade(order, filepath:str, pricetype='High'):
     """
     Method for save the trades from backtesting
     """
 
     try:
         header = 'Datetime,Price,Quantity,Total,Type'
-        path = f'Trades_{ticker}_{pricetype}.csv'
 
-        if not os.path.exists(path):
-            with open(path, 'w') as tfile:
+        if not os.path.exists(filepath):
+            with open(filepath, 'w') as tfile:
                 tfile.write(header + '\n')
                 tfile.write(str(order) + '\n')
                 tfile.close()
         else:
-            with open(path, 'a') as tfile:
+            with open(filepath, 'a') as tfile:
                 tfile.write(str(order) + '\n')
                 tfile.close()
     except Exception as e:

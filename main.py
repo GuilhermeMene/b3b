@@ -1,11 +1,12 @@
 """
-B3B class file 
+B3B class file
 """
 
 import os
 import re
-import sys 
-import pandas as pd 
+import sys
+from datetime import datetime
+import pandas as pd
 from b3b import logger
 from b3b import strategy
 import yfinance as yf
@@ -20,10 +21,16 @@ class B3B:
         self.timerange = timerange
         self.ticker_name = ticker
 
-        #Set the ticker 
+        #Set the date
+        self.date = datetime.today().strftime('%Y-%m-%d-%H:%M')
+
+        #Set the balance
+        self.money_balance = 10000.0
+
+        #Set the ticker
         self.ticker = yf.Ticker(str(ticker))
 
-        #Set the log path 
+        #Set the log path
         logger.set_path(os.getcwd())
 
     def runTask(self):
@@ -31,10 +38,10 @@ class B3B:
         Method for automate the backtesting process
         """
         try:
-            #Get the data 
+            #Get the data
             self.get_data()
 
-            #Get the strategy 
+            #Get the strategy
             self.get_strategy()
 
             #Run the backtest using high price
@@ -80,27 +87,30 @@ class B3B:
                 )
         except Exception as e:
             logger.log(f'Error getting data: {e}')
-    
+
     def get_strategy(self):
         """
-        Method for get strategies 
+        Method for get strategies
         """
         try:
-            self.tickerdata = strategy.get_entry_exit(self.hist_data)
+            self.tickerdata, self.stoploss = strategy.get_entry_exit(self.hist_data)
         except Exception as e:
             logger.log(f'Error getting strategy: {e}')
-
 
     def run_backtesting(self):
         """
         Method for run the backtesting
         """
         try:
+            #Set the path of trades
+            self.trade_path = f'Trades_{self.ticker_name}_{self.pricetype}_{self.date}.csv'
+
             print('Running the bot...')
-            self.money_balance = 1000.0
             self.qty = 0
             self.long = False
+            self.lastLongPrice = 0
             for i, row in self.tickerdata.iterrows():
+                #Set the long order
                 if row['entry'] == 1 and self.long == False and self.money_balance > row[self.pricetype]:
                     print(' *** Making long')
                     price = row[self.pricetype]
@@ -110,11 +120,13 @@ class B3B:
 
                     print(' ---Saving the order')
                     trade = f'{datetime},{round(price,2)},{self.qty},{round(total,2)},LONG'
-                    logger.save_trade(trade, self.ticker_name, pricetype=self.pricetype)
+                    logger.save_trade(trade, self.trade_path, pricetype=self.pricetype)
 
                     self.money_balance = float(self.money_balance % price)
                     self.long = True
+                    self.lastLongPrice = price
 
+                # Set the short order
                 elif row['exit'] == 1 and self.long == True and self.qty > 0:
                     print(' *** Making short')
                     price = row[self.pricetype]
@@ -123,21 +135,36 @@ class B3B:
 
                     print(' ---Saving the order')
                     trade = f'{datetime},{round(price,2)},{self.qty},{round(total,2)},SHORT'
-                    logger.save_trade(trade, self.ticker_name, pricetype=self.pricetype)
+                    logger.save_trade(trade, self.trade_path, pricetype=self.pricetype)
 
                     self.long = False
                     self.money_balance = total
                     self.qty = 0
-        
+
+                # Set the stop loss
+                elif self.long == True and row[self.pricetype] < (self.lastLongPrice - (self.lastLongPrice * self.stoploss)):
+                    print(' *** Making short - STOPLOSS')
+                    price = row[self.pricetype]
+                    total = float(price * self.qty)
+                    datetime = row.name
+
+                    print(' ---Saving the order')
+                    trade = f'{datetime},{round(price,2)},{self.qty},{round(total,2)},STOPLOSS'
+                    logger.save_trade(trade, self.trade_path, pricetype=self.pricetype)
+
+                    self.long = False
+                    self.money_balance = total
+                    self.qty = 0
+
         except Exception as e:
             logger.log(f'Backtesting running error: {e}')
 
     def make_report(self):
         """
-        Method for make backtesting reports 
+        Method for make backtesting reports
         """
         try:
-            filepath = f'Trades_{self.ticker_name}_{self.pricetype}.csv'
+            filepath = f'Trades_{self.ticker_name}_{self.pricetype}_{self.date}.csv'
             data = pd.read_csv(filepath, delimiter=',')
 
             first = data.head(1)
@@ -145,10 +172,11 @@ class B3B:
 
             tdiff_pc = ((last['Total'].values - first['Total'].values) / first['Total'].values) * 100.0
             tdiff = (last['Total'].values - first['Total'].values)
-            profit = last['Total'].values - 1000.0
+            profit = last['Total'].values - 10000.0
             minb = min(data['Total'])
             maxb = max(data['Total'])
 
+            print(f' *** Reporting the results using the {self.pricetype} prices.')
             table = [['Nº of trades:', len(data)],
                     ['Total Difference:', round(tdiff[0], 2)],
                     ['Total Diff (%):', round(tdiff_pc[0], 2)],
@@ -171,8 +199,8 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         b3b = B3B(
-            ticker=sys.argv[1], 
-            timeframe=sys.argv[2], 
+            ticker=sys.argv[1],
+            timeframe=sys.argv[2],
             timerange=sys.argv[3]
         )
         b3b.runTask()

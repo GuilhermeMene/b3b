@@ -14,12 +14,14 @@ from tabulate import tabulate
 
 
 class B3B:
-    def __init__(self, ticker, timeframe, timerange):
+    def __init__(self, ticker, timeframe, timerange, pricetype):
 
         #Set the initial parameters
         self.timeframe = timeframe
         self.timerange = timerange
         self.ticker_name = ticker
+
+        self.pricetype = pricetype
 
         #Set the date
         self.date = datetime.today().strftime('%Y-%m-%d-%H:%M')
@@ -45,19 +47,9 @@ class B3B:
             self.get_strategy()
 
             #Run the backtest using high price
-            self.pricetype = 'High'
-            self.run_backtesting()
-
-            #Run the backtest using the low price
-            self.pricetype = 'Low'
             self.run_backtesting()
 
             #Make the report of the backtest runned using the High
-            self.pricetype = 'High'
-            self.make_report()
-
-            #Make the report of the backtest runned using the low
-            self.pricetype = 'Low'
             self.make_report()
 
         except Exception as e:
@@ -169,6 +161,11 @@ class B3B:
 
                 data = pd.read_csv(filepath, delimiter=',')
 
+                #Get the number of each trade type
+                long = len(data['Type'][data['Type'] == 'LONG'])
+                short = len(data['Type'][data['Type'] == 'SHORT'])
+                stop = len(data['Type'][data['Type'] == 'STOPLOSS'])
+
                 first = data.head(1)
                 last = data.tail(1)
 
@@ -178,16 +175,19 @@ class B3B:
                 minb = min(data['Total'])
                 maxb = max(data['Total'])
 
-                print(f' *** Reporting the results using the {self.pricetype} prices.')
+                print(f' *** Reporting the results using the *{self.pricetype}* prices.')
                 table = [['Nº of trades:', len(data)],
                         ['Total Difference:', round(tdiff[0], 2)],
                         ['Total Diff (%):', round(tdiff_pc[0], 2)],
                         ['Profit (R$):', round(profit[0], 2)],
-                        ['Max balance (R$):', maxb],
-                        ['Min balance (R$):', minb]]
+                        ['Max balance (R$):', round(maxb, 2)],
+                        ['Min balance (R$):', round(minb, 2)],
+                        ['Long:', long],
+                        ['Short:', short],
+                        ['Stoploss:', stop]]
 
                 #Print the report
-                print(tabulate(table))
+                print(tabulate(tabular_data=table, tablefmt='outline', numalign='right'))
             else:
                 print('The backtesting did not result in any trades to report...')
 
@@ -198,13 +198,14 @@ class B3B:
 if __name__ == '__main__':
 
     #Check the length of the sys argvs
-    if len(sys.argv) != 4:
-        print("The usage of the tool is: python b3b.py ticker timeframe timerange")
+    if len(sys.argv) != 5:
+        print("The usage of the tool is: python b3b.py ticker timeframe timerange price")
         sys.exit(1)
     else:
         b3b = B3B(
             ticker=sys.argv[1],
             timeframe=sys.argv[2],
-            timerange=sys.argv[3]
+            timerange=sys.argv[3],
+            pricetype=sys.argv[4]
         )
         b3b.runTask()

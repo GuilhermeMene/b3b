@@ -9,6 +9,21 @@ The backtesting have a simulated wallet with R$ 10.000,00 and place the order ac
 
 The default setup of the backtesting consider *High* and *Low* prices to make the report.
 
+### Default strategy
+The defautl strategy was based in the combination of RSI and Bollinger Bands using the follow condition:
+```
+The backtest will make a long if:
+    rsi < 30 AND
+    lower band > low price
+
+The backtest will make a short if:
+    Have done a long before AND
+    rsi > 70 AND
+    upper band < high price
+
+```
+#### It is strongly recommended that you edit the strategy file for your own testing!
+The strategy indicators can be calculated using the [pandas-ta](https://github.com/twopirllc/pandas-ta).
 
 ### Quickstart
 With the Docker installed:

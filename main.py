@@ -14,12 +14,14 @@ from tabulate import tabulate
 
 
 class B3B:
-    def __init__(self, ticker, timeframe, timerange):
+    def __init__(self, ticker, timeframe, timerange, pricetype):
 
         #Set the initial parameters
         self.timeframe = timeframe
         self.timerange = timerange
         self.ticker_name = ticker
+
+        self.pricetype = pricetype
 
         #Set the date
         self.date = datetime.today().strftime('%Y-%m-%d-%H:%M')
@@ -45,19 +47,9 @@ class B3B:
             self.get_strategy()
 
             #Run the backtest using high price
-            self.pricetype = 'High'
-            self.run_backtesting()
-
-            #Run the backtest using the low price
-            self.pricetype = 'Low'
             self.run_backtesting()
 
             #Make the report of the backtest runned using the High
-            self.pricetype = 'High'
-            self.make_report()
-
-            #Make the report of the backtest runned using the low
-            self.pricetype = 'Low'
             self.make_report()
 
         except Exception as e:
@@ -165,27 +157,39 @@ class B3B:
         """
         try:
             filepath = f'Trades_{self.ticker_name}_{self.pricetype}_{self.date}.csv'
-            data = pd.read_csv(filepath, delimiter=',')
+            if os.path.exists(filepath):
 
-            first = data.head(1)
-            last = data.tail(1)
+                data = pd.read_csv(filepath, delimiter=',')
 
-            tdiff_pc = ((last['Total'].values - first['Total'].values) / first['Total'].values) * 100.0
-            tdiff = (last['Total'].values - first['Total'].values)
-            profit = last['Total'].values - 10000.0
-            minb = min(data['Total'])
-            maxb = max(data['Total'])
+                #Get the number of each trade type
+                long = len(data['Type'][data['Type'] == 'LONG'])
+                short = len(data['Type'][data['Type'] == 'SHORT'])
+                stop = len(data['Type'][data['Type'] == 'STOPLOSS'])
 
-            print(f' *** Reporting the results using the {self.pricetype} prices.')
-            table = [['Nº of trades:', len(data)],
-                    ['Total Difference:', round(tdiff[0], 2)],
-                    ['Total Diff (%):', round(tdiff_pc[0], 2)],
-                    ['Profit (R$):', round(profit[0], 2)],
-                    ['Max balance (R$):', maxb],
-                    ['Min balance (R$):', minb]]
+                first = data.head(1)
+                last = data.tail(1)
 
-            #Print the report
-            print(tabulate(table))
+                tdiff_pc = ((last['Total'].values - first['Total'].values) / first['Total'].values) * 100.0
+                tdiff = (last['Total'].values - first['Total'].values)
+                profit = last['Total'].values - 10000.0
+                minb = min(data['Total'])
+                maxb = max(data['Total'])
+
+                print(f' *** Reporting the results using the *{self.pricetype}* prices.')
+                table = [['Nº of trades:', len(data)],
+                        ['Total Difference:', round(tdiff[0], 2)],
+                        ['Total Diff (%):', round(tdiff_pc[0], 2)],
+                        ['Profit (R$):', round(profit[0], 2)],
+                        ['Max balance (R$):', round(maxb, 2)],
+                        ['Min balance (R$):', round(minb, 2)],
+                        ['Long:', long],
+                        ['Short:', short],
+                        ['Stoploss:', stop]]
+
+                #Print the report
+                print(tabulate(tabular_data=table, tablefmt='outline', numalign='right'))
+            else:
+                print('The backtesting did not result in any trades to report...')
 
         except Exception as e:
             logger.log(f'An error occurred making the report. Error: {e}')
@@ -194,13 +198,14 @@ class B3B:
 if __name__ == '__main__':
 
     #Check the length of the sys argvs
-    if len(sys.argv) != 4:
-        print("The usage of the tool is: python b3b.py ticker timeframe timerange")
+    if len(sys.argv) != 5:
+        print("The usage of the tool is: python b3b.py ticker timeframe timerange price")
         sys.exit(1)
     else:
         b3b = B3B(
             ticker=sys.argv[1],
             timeframe=sys.argv[2],
-            timerange=sys.argv[3]
+            timerange=sys.argv[3],
+            pricetype=sys.argv[4]
         )
         b3b.runTask()

@@ -7,8 +7,22 @@ The B3B strategy file calculate and populate the *entry* and *exit* points on th
 
 The backtesting have a simulated wallet with R$ 10.000,00 and place the order according the strategy.
 
-The default setup of the backtesting consider *High* and *Low* prices to make the report.
 
+### Default strategy
+The defautl strategy was based in the combination of RSI and Bollinger Bands using the follow condition:
+```
+The backtest will make a long if:
+    rsi < 30 AND
+    lower band > low price
+
+The backtest will make a short if:
+    Have done a long before AND
+    rsi > 70 AND
+    upper band < high price
+
+```
+#### It is strongly recommended that you edit the strategy file for your own testing!
+The strategy indicators can be calculated using the [pandas-ta](https://github.com/twopirllc/pandas-ta).
 
 ### Quickstart
 With the Docker installed:
@@ -20,18 +34,18 @@ With the Docker installed:
 
 >> cd b3b
 
-# Build the Docker image and run the default backtesting (ticker=B3SA3.SA timeframe=1d timerange=2024-01-01-2024-08-01):
+# Build the Docker image and run the default backtesting (ticker=B3SA3.SA timeframe=1d timerange=2024-01-01-2024-08-01 price=Close):
 
 >> docker compose up
 ```
 
 ### Basic usage of the tool
 ```
->> docker compose run --rm b3b sh -c "python main.py TICKER TIMEFRAME TIMERANGE"
+>> docker compose run --rm b3b sh -c "python main.py TICKER TIMEFRAME TIMERANGE PRICE"
 
-# Example of usage for PETR4 using 1d timeframe, and calculating the last 3 mounths:
+# Example of usage for PETR4 using 1d timeframe, calculating the last 3 mounths, and using the close price:
 
->> docker compose run --rm sh -c "python main.py PETR4.SA 1d 3mo"
+>> docker compose run --rm sh -c "python main.py PETR4.SA 1d 3mo Close"
 ```
 
 ### Standalone Python distribution

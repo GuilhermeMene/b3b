@@ -165,27 +165,31 @@ class B3B:
         """
         try:
             filepath = f'Trades_{self.ticker_name}_{self.pricetype}_{self.date}.csv'
-            data = pd.read_csv(filepath, delimiter=',')
+            if os.path.exists(filepath):
 
-            first = data.head(1)
-            last = data.tail(1)
+                data = pd.read_csv(filepath, delimiter=',')
 
-            tdiff_pc = ((last['Total'].values - first['Total'].values) / first['Total'].values) * 100.0
-            tdiff = (last['Total'].values - first['Total'].values)
-            profit = last['Total'].values - 10000.0
-            minb = min(data['Total'])
-            maxb = max(data['Total'])
+                first = data.head(1)
+                last = data.tail(1)
 
-            print(f' *** Reporting the results using the {self.pricetype} prices.')
-            table = [['Nº of trades:', len(data)],
-                    ['Total Difference:', round(tdiff[0], 2)],
-                    ['Total Diff (%):', round(tdiff_pc[0], 2)],
-                    ['Profit (R$):', round(profit[0], 2)],
-                    ['Max balance (R$):', maxb],
-                    ['Min balance (R$):', minb]]
+                tdiff_pc = ((last['Total'].values - first['Total'].values) / first['Total'].values) * 100.0
+                tdiff = (last['Total'].values - first['Total'].values)
+                profit = last['Total'].values - 10000.0
+                minb = min(data['Total'])
+                maxb = max(data['Total'])
 
-            #Print the report
-            print(tabulate(table))
+                print(f' *** Reporting the results using the {self.pricetype} prices.')
+                table = [['Nº of trades:', len(data)],
+                        ['Total Difference:', round(tdiff[0], 2)],
+                        ['Total Diff (%):', round(tdiff_pc[0], 2)],
+                        ['Profit (R$):', round(profit[0], 2)],
+                        ['Max balance (R$):', maxb],
+                        ['Min balance (R$):', minb]]
+
+                #Print the report
+                print(tabulate(table))
+            else:
+                print('The backtesting did not result in any trades to report...')
 
         except Exception as e:
             logger.log(f'An error occurred making the report. Error: {e}')
